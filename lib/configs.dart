@@ -313,9 +313,16 @@ class Configs {
         // 处理 fixed 开头的属性
         if (attributeName.startsWith('fixed.')) {
           var fixedAttrName = attributeName.replaceFirst('fixed.', '');
-          fixAttrs.write(' $fixedAttrName="${_convertToXmlValue(fixedAttrName, attributeValue)}"');
+          var xmlValue = _convertToXmlValue(fixedAttrName, attributeValue);
+          if (xmlValue.isNotEmpty){
+            fixAttrs.write(' $fixedAttrName="$xmlValue"');
+          }
+
         } else {
-          embeddedAttrs.write(' $attributeName="${_convertToXmlValue(attributeName, attributeValue)}"');
+          var xmlValue = _convertToXmlValue(attributeName, attributeValue);
+          if (xmlValue.isNotEmpty) {
+            embeddedAttrs.write(' $attributeName="$xmlValue"');
+          }
         }
       });
 

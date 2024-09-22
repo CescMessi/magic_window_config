@@ -5,7 +5,7 @@ import 'package:device_apps/device_apps.dart';
 import 'package:lpinyin/lpinyin.dart';
 import 'package:root/root.dart';
 import 'package:xml/xml.dart' as xml;
-import 'package:dropdown_search/dropdown_search.dart';
+import 'package:fluttertoast/fluttertoast.dart';
 
 import 'activities_widget.dart';
 import 'platform_channel.dart';
@@ -98,10 +98,25 @@ class _AppViewerState extends State<AppViewer> {
                     {
                       print(config!.customConfig);
                       config!.saveCustomConfig();
+                      Fluttertoast.showToast(
+                          msg: '已保存，重启后生效',
+                          toastLength: Toast.LENGTH_SHORT,
+                          gravity: ToastGravity.CENTER,
+                          timeInSecForIosWeb: 1,
+                          fontSize: 16.0
+                      );
                     }
                     break;
 
                   case "1":
+                    {
+                      print(config!.customConfig);
+                      config!.saveCustomConfig();
+                      config!.updateRule();
+                    }
+                    break;
+
+                  case "2":
                     {
                       setState(() {
                         config!.resetCustomConfig();
@@ -109,7 +124,7 @@ class _AppViewerState extends State<AppViewer> {
                     }
                     break;
 
-                  case "2":
+                  case "3":
                     {
                       setState(() {
                         config!.clearCustomConfig();
@@ -127,11 +142,12 @@ class _AppViewerState extends State<AppViewer> {
               itemBuilder: (BuildContext context) =>
               <PopupMenuItem<String>>[
                 const PopupMenuItem(value: "0", child: Text("保存")),
+                const PopupMenuItem(value: "1", child: Text("保存并立即应用配置")),
                 const PopupMenuItem(
-                  value: "1",
+                  value: "2",
                   child: Text("重置为修改前自定义配置")),
                 const PopupMenuItem(
-                    value: "2",
+                    value: "3",
                     child: Text("清空所有自定义配置"))
               ]),
 

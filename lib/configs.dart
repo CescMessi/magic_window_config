@@ -1,6 +1,8 @@
 import 'dart:developer';
+import 'package:flutter/material.dart';
 import 'package:root/root.dart';
 import 'package:xml/xml.dart';
+import 'package:fluttertoast/fluttertoast.dart';
 
 
 dynamic _xmlValueParser(String attributeName, String xmlValue) {
@@ -353,9 +355,6 @@ class Configs {
     await Root.exec(cmd: 'echo \'$embeddedRulesXmlStr\' > $embeddedRulesPath');
     await Root.exec(cmd: 'echo \'$fixRulesXmlStr\' > $fixRulesPath');
 
-    // 直接更新当前配置
-    String? update_result = await Root.exec(cmd: '/data/adb/MIUI_MagicWindow+/config/update_rules.sh');
-    log(update_result!);
   }
 
 // 处理字典值到 XML 的转换逻辑
@@ -383,6 +382,23 @@ class Configs {
 
       default:
         return attributeValue.toString();
+    }
+  }
+
+  Future<void> updateRule() async {
+    // 直接更新当前配置
+    String? updateResult = await Root.exec(cmd: '/data/adb/MIUI_MagicWindow+/config/update_rule.sh');
+    log(updateResult!);
+    for (var singleLine in updateResult.split('\n')){
+      if (singleLine.isNotEmpty){
+        Fluttertoast.showToast(
+            msg: singleLine,
+            toastLength: Toast.LENGTH_SHORT,
+            gravity: ToastGravity.CENTER,
+            timeInSecForIosWeb: 1,
+            fontSize: 16.0
+        );
+      }
     }
   }
 

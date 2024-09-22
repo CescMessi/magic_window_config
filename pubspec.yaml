@@ -53,6 +53,7 @@ dev_dependencies:
   xml: ^6.0.1
   dropdown_search: 5.0.5
   flutter_colorpicker: ^1.0.3
+  fluttertoast: 8.2.4
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec

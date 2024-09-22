@@ -97,22 +97,21 @@ class _AppViewerState extends State<AppViewer> {
                   case "0":
                     {
                       print(config!.customConfig);
-                      config!.saveCustomConfig();
-                      Fluttertoast.showToast(
-                          msg: '已保存，重启后生效',
-                          toastLength: Toast.LENGTH_SHORT,
-                          gravity: ToastGravity.CENTER,
-                          timeInSecForIosWeb: 1,
-                          fontSize: 16.0
-                      );
+                      config!.saveCustomConfig().then((value) =>
+                        Fluttertoast.showToast(
+                            msg: '已保存，重启后生效',
+                            toastLength: Toast.LENGTH_SHORT,
+                            gravity: ToastGravity.CENTER,
+                            timeInSecForIosWeb: 1,
+                            fontSize: 16.0
+                        ));
                     }
                     break;
 
                   case "1":
                     {
                       print(config!.customConfig);
-                      config!.saveCustomConfig();
-                      config!.updateRule();
+                      config!.saveCustomConfig().then((value) => config?.updateRule());
                     }
                     break;
 

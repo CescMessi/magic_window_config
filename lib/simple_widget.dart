@@ -79,7 +79,16 @@ class LabeledInput extends StatefulWidget {
 class _LabeledInputState extends State<LabeledInput> {
   @override
   Widget build(BuildContext context) {
-    widget.controller.text = widget.defaultText;
+    // widget.controller.text = widget.defaultText;
+    widget.controller.value = TextEditingValue(
+      text: widget.defaultText,
+      selection: TextSelection.fromPosition(
+        TextPosition(
+          affinity: TextAffinity.downstream,
+          offset: widget.defaultText.length
+        )
+      )
+    );
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
@@ -93,6 +102,10 @@ class _LabeledInputState extends State<LabeledInput> {
               keyboardType: widget.isNumber
                   ? const TextInputType.numberWithOptions(decimal: true)
                   : null,
+              onChanged: (value) {
+                widget.onSubmitted(
+                    widget.selectedAppPackageName, widget.xmlKey, value.toString());
+              },
               onSubmitted: (value) {
                 widget.onSubmitted(
                     widget.selectedAppPackageName, widget.xmlKey, value.toString());

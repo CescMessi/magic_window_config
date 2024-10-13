@@ -413,6 +413,18 @@ class Configs {
     customConfig = {};
   }
 
+  void removePackageConfig(String packageName){
+    var result = customConfig.remove(packageName);
+    String showText = '已移除$packageName的配置$result';
+    Fluttertoast.showToast(
+        msg: showText,
+        toastLength: Toast.LENGTH_LONG,
+        gravity: ToastGravity.CENTER,
+        timeInSecForIosWeb: 1,
+        fontSize: 16.0
+    );
+  }
+
   void resetCustomConfig(){
     clearCustomConfig();
     _readFile();

@@ -130,6 +130,13 @@ class _AppViewerState extends State<AppViewer> {
                       });
                     }
                     break;
+                  case "4":
+                    {
+                      setState(() {
+                        config!.removePackageConfig(_currentPackageName);
+                      });
+                    }
+                    break;
 
                   default:
                     {
@@ -147,7 +154,10 @@ class _AppViewerState extends State<AppViewer> {
                   child: Text("重置为修改前自定义配置")),
                 const PopupMenuItem(
                     value: "3",
-                    child: Text("清空所有自定义配置"))
+                    child: Text("清空所有自定义配置")),
+                const PopupMenuItem(
+                    value: "4",
+                    child: Text("清空当前页应用自定义配置"))
               ]),
 
         ],

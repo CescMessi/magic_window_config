@@ -218,88 +218,7 @@ class _AppViewerState extends State<AppViewer> {
   }
 
   Widget _buildSelectedApp(String selectedAppPackageName) {
-    List<String> activityRule = []; // "a,b"
-    String clearTop = ""; // false
-    List<String> placeholder = ["", ""]; // "a:b"
-    String fullRule = "";
-    String relaunch = ""; // false
-    List<List<String>> splitPairRule = []; // "a:b,c:d"
-    List<String> transitionRules = []; // "a,b"
-    String disableSensor = ""; // false
-    String splitRatio = ""; // "0.42"
-    String scaleMode = ""; // "1"
-    String isShowDivider = ""; // true
-    String supportFullSize = ""; // true
-    String supportCameraPreview = ""; // false
     List<String> allActivities = ['*'];
-
-    bool hasEmbeddedRules = false;
-    if (embeddedRules != null && selectedAppPackageName.isNotEmpty) {
-      var parseResult = embeddedRules!.findAllElements('package').where(
-              (package) =>
-          package.getAttribute('name') == selectedAppPackageName);
-      if (parseResult.isNotEmpty) {
-        var parseLine = parseResult.elementAt(0);
-        hasEmbeddedRules = true;
-
-        // 全屏activity
-        var activityRuleStr = parseLine.getAttribute('activityRule') ?? "";
-        if (activityRuleStr != "") {
-          activityRule = activityRuleStr.split(',');
-        }
-
-        // 占位用activity
-        var placeholderStr = parseLine.getAttribute('placeholder') ?? "";
-        if (placeholderStr != "") {
-          placeholder = placeholderStr.split(':');
-        }
-
-        // 相互覆盖的activity
-        var transitionRulesStr =
-            parseLine.getAttribute('transitionRules') ?? "";
-        if (transitionRulesStr != "") {
-          transitionRules = transitionRulesStr.split(',');
-        }
-
-        // 左右分隔的activity
-        var splitPairRuleStr = parseLine.getAttribute('splitPairRule') ?? "";
-        if (splitPairRuleStr != "") {
-          var splitPairs = splitPairRuleStr.split(',');
-          for (var i = 0; i < splitPairs.length; i++) {
-            splitPairRule.add(splitPairs[i].split(':'));
-          }
-        }
-
-        // 右侧多实例
-        clearTop = parseLine.getAttribute('clearTop') ?? "";
-
-        // 调整窗口时重加载
-        relaunch = parseLine.getAttribute('relaunch') ?? "";
-
-        // 禁用传感器
-        disableSensor = parseLine.getAttribute('disableSensor') ?? "";
-
-        // 支持左右调节
-        isShowDivider = parseLine.getAttribute('isShowDivider') ?? "";
-
-        // 支持视频全屏
-        supportFullSize = parseLine.getAttribute('supportFullSize') ?? "";
-
-        // 支持在半屏预览拍照界面
-        supportCameraPreview = parseLine.getAttribute('supportFullSize') ?? "";
-
-        // 全屏规则
-        fullRule = parseLine.getAttribute('fullRule') ?? "";
-
-        // 分割比例
-        splitRatio = parseLine.getAttribute('splitRatio') ?? "";
-
-        // 大小兼容比例
-        scaleMode = parseLine.getAttribute('scaleMode') ?? "";
-      }
-    }
-
-
     AndroidMethods.getActivities(selectedAppPackageName).then((activities) {
       print(activities);
       allActivities.addAll(activities);
@@ -371,9 +290,7 @@ class _AppViewerState extends State<AppViewer> {
         child: ListView(
           children: [
             Text(
-              hasEmbeddedRules
-                  ? "$selectedAppPackageName"
-                  : "$selectedAppPackageName 无配置",
+              "$selectedAppPackageName",
               style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
             ),
             const Divider(

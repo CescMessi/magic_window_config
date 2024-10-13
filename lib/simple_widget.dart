@@ -338,14 +338,14 @@ class _MagicSimpleAreaState extends State<MagicSimpleArea> {
     "调整窗口重加载 [relaunch]",
     "禁用传感器 [disableSensor]",
     "支持左右调节 [isShowDivider]",
-    "支持视频全屏 [supportFullSize]",
-    "半屏预览拍照界面 [supportCameraPreview]",
+    "支持拉伸至全屏 [supportFullSize]",
+    "支持拍照预览 [supportCameraPreview]",
   ];
 
   var labeledInputKeys = ["splitRatio", "scaleMode", "fullRule"];
   var labeledInputTitles = [
     "分割比例 [splitRatio]",
-    "大小兼容比例 [scaleMode]",
+    "应用缩放配置 [scaleMode]",
     "全屏规则 [fullRule]"
   ];
 
@@ -419,7 +419,6 @@ class _FixedSimpleAreaState extends State<FixedSimpleArea> {
     "fixed.allowEmbInPortrait",
     "fixed.transparentBar",
     "fixed.isShowDivider",
-    "fixed.supportFullSize"
   ];
   var switchTitles = [
     "禁用内置信箱模式 [disable]",
@@ -428,9 +427,8 @@ class _FixedSimpleAreaState extends State<FixedSimpleArea> {
     "强制以竖屏 [allPortrait]",
     "跳过兼容模式 [skipCompatMode]",
     "允许两边区域空白 [allowEmbInPortrait]",
-    "沉浸式小白条 [transparentBar]",
+    "透明状态栏 [transparentBar]",
     "支持左右调节 [isShowDivider]",
-    "支持视频全屏 [supportFullSize]"
   ];
 
   @override

@@ -110,6 +110,18 @@ class Configs {
     }
   }
 
+  bool modelHasEmbeddedConfig(String packageName){
+    var parseResult = embeddedDocument!.findAllElements('package').where(
+            (package) => package.getAttribute('name') == packageName);
+    return parseResult.isNotEmpty;
+  }
+
+  bool modelHasFixedConfig(String packageName){
+    var parseResult = fixedDocument!.findAllElements('package').where(
+            (package) => package.getAttribute('name') == packageName);
+    return parseResult.isNotEmpty;
+  }
+
   void setCustomValue(String packageName, String xmlKey, dynamic xmlParsedValue){
     if (customConfig[packageName] == null) {
       // 不存在这个app的自定义配置 将模块内的复制过来

@@ -285,13 +285,34 @@ class _AppViewerState extends State<AppViewer> {
       );
       splitRules.add(addIcon);
 
+      var configStatus = "";
+      if (config!.customConfig.containsKey(selectedAppPackageName)){
+        configStatus = "自定义配置：🔵";
+      } else {
+        configStatus = "自定义配置：⚪";
+      }
+      if (config!.modelHasEmbeddedConfig(selectedAppPackageName)){
+        configStatus += "  模块内置平行视界：🔵";
+      } else {
+        configStatus += "  模块内置平行视界：⚪";
+      }
+      if (config!.modelHasFixedConfig(selectedAppPackageName)){
+        configStatus += "  模块内置信箱模式：🔵";
+      } else {
+        configStatus += "  模块内置信箱模式：⚪";
+      }
+
       return Container(
         padding: EdgeInsets.all(30),
         child: ListView(
           children: [
             Text(
-              "$selectedAppPackageName",
+              selectedAppPackageName,
               style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+            ),
+            SizedBox(height: 5,),
+            Text(
+              configStatus
             ),
             const Divider(
               height: 10,

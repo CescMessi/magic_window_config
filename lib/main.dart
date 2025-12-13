@@ -38,6 +38,8 @@ class AppViewer extends StatefulWidget {
 class _AppViewerState extends State<AppViewer> {
   int _index = -1;
   List? _apps;
+  List? _filteredApps;
+  final TextEditingController _searchController = TextEditingController();
   final ValueNotifier<String> _selectedAppPackageNameNotifier =
   ValueNotifier<String>('');
   bool _rootStatus = false;
@@ -85,7 +87,43 @@ class _AppViewerState extends State<AppViewer> {
 
     setState(() {
       _apps = apps;
+      _filteredApps = apps;
     });
+  }
+
+  void _filterApps(String query) {
+    if (query.isEmpty) {
+      setState(() {
+        _filteredApps = _apps;
+        // 清空搜索时重置选择状态
+        _currentPackageName = "";
+        _selectedAppPackageNameNotifier.value = "";
+        _index = -1;
+      });
+    } else {
+      List<Application> filtered = _apps
+          ?.where((app) {
+        final appName = app.appName.toLowerCase();
+        final packageName = app.packageName.toLowerCase();
+        final searchQuery = query.toLowerCase();
+        return appName.contains(searchQuery) || 
+               packageName.contains(searchQuery);
+      }).cast<Application>()
+          .toList() ?? [];
+      
+      setState(() {
+        _filteredApps = filtered;
+        
+        // 如果搜索结果只有一个应用，自动选择它
+        if (filtered.length == 1 && _currentPackageName != filtered[0].packageName) {
+          final selectedApp = filtered[0];
+          _selectedAppPackageNameNotifier.value = selectedApp.packageName;
+          _currentPackageName = selectedApp.packageName;
+          _index = _apps!.indexOf(selectedApp);
+          _placeholderKey0 = UniqueKey();
+        }
+      });
+    }
   }
 
   @override
@@ -192,32 +230,52 @@ class _AppViewerState extends State<AppViewer> {
       return Center(child: CircularProgressIndicator());
     }
 
-    return ListView.builder(
-      itemCount: _apps!.length,
-      itemBuilder: (context, index) {
-        final app = _apps![index];
-        return ListTile(
-          leading: Image.memory(
-            app.icon,
-            width: 48,
-            height: 48,
-            gaplessPlayback: true,
+    return Column(
+      children: [
+        Padding(
+          padding: const EdgeInsets.all(8.0),
+          child: TextField(
+            controller: _searchController,
+            decoration: const InputDecoration(
+              hintText: '搜索应用名称或包名...',
+              prefixIcon: Icon(Icons.search),
+              border: OutlineInputBorder(),
+            ),
+            onChanged: (value) {
+              _filterApps(value);
+            },
           ),
-          title: Text(app.appName),
-          subtitle: Text(app.packageName),
-          selected: _index == index,
-          onTap: () {
-            if (_currentPackageName != app.packageName) {
-              _selectedAppPackageNameNotifier.value = app.packageName;
-              setState(() {
-                _index = index;
-                _currentPackageName = app.packageName;
-                _placeholderKey0 = UniqueKey();
-              });
-            }
-          },
-        );
-      },
+        ),
+        Expanded(
+          child: ListView.builder(
+            itemCount: _filteredApps?.length ?? 0,
+            itemBuilder: (context, index) {
+              final app = _filteredApps![index];
+              return ListTile(
+                leading: Image.memory(
+                  app.icon,
+                  width: 48,
+                  height: 48,
+                  gaplessPlayback: true,
+                ),
+                title: Text(app.appName),
+                subtitle: Text(app.packageName),
+                selected: _index == index,
+                onTap: () {
+                  if (_currentPackageName != app.packageName) {
+                    _selectedAppPackageNameNotifier.value = app.packageName;
+                    setState(() {
+                      _index = index;
+                      _currentPackageName = app.packageName;
+                      _placeholderKey0 = UniqueKey();
+                    });
+                  }
+                },
+              );
+            },
+          ),
+        ),
+      ],
     );
   }
 

@@ -4,6 +4,21 @@ import 'package:root/root.dart';
 import 'package:xml/xml.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 
+// 获取模块名称，检查Hyper_MagicWindow是否存在，不存在则使用MIUI_MagicWindow+
+Future<String> getModuleName() async {
+  try {
+    // 首先尝试检查Hyper_MagicWindow模块是否存在
+    String? checkResult = await Root.exec(cmd: "test -d /data/adb/modules/Hyper_MagicWindow && echo 'exists' || echo 'not_exists'");
+    if (checkResult?.trim() == 'exists') {
+      return 'Hyper_MagicWindow';
+    }
+  } catch (e) {
+    log('检查Hyper_MagicWindow模块时出错: $e');
+  }
+  
+  // 如果Hyper_MagicWindow不存在，返回默认的MIUI_MagicWindow+
+  return 'MIUI_MagicWindow+';
+}
 
 dynamic _xmlValueParser(String attributeName, String xmlValue) {
   switch (attributeName) {
@@ -68,9 +83,27 @@ class Configs {
   bool? readCustomFixedFileSuccess;
 
   Map<String, Map<String, dynamic>> customConfig = {};
+  String moduleName = 'MIUI_MagicWindow+';
+  bool isInitialized = false;
+  late final Future<void> _initializationFuture;
 
   Configs() {
-    _readFile();
+    _initializationFuture = _startInitialization();
+  }
+
+  Future<void> _startInitialization() async {
+    await _initModuleName();
+    await _readFile();
+    isInitialized = true;
+  }
+
+  Future<void> waitForInitialization() async {
+    await _initializationFuture;
+  }
+
+  Future<void> _initModuleName() async {
+    moduleName = await getModuleName();
+    log('module name: $moduleName');
   }
 
   dynamic getCurrentValue(String packageName, String attributeName){
@@ -166,7 +199,7 @@ class Configs {
     try {
       // 读取模块的平行视界配置
       String embeddedRulesFile =
-          '/data/adb/modules/MIUI_MagicWindow+/common/source/embedded_rules_list.xml';
+          '/data/adb/modules/$moduleName/common/source/embedded_rules_list.xml';
       String? embeddedFileContent =
           await Root.exec(cmd: "cat $embeddedRulesFile");
 
@@ -184,7 +217,7 @@ class Configs {
     try {
       // 读取模块的信箱配置
       String fixedOrientationFile =
-          '/data/adb/modules/MIUI_MagicWindow+/common/source/fixed_orientation_list.xml';
+          '/data/adb/modules/$moduleName/common/source/fixed_orientation_list.xml';
       String? fixedFileContent =
           await Root.exec(cmd: "cat $fixedOrientationFile");
       if (fixedFileContent!.startsWith(RegExp(r'^[\s\n]*<'))) {
@@ -201,7 +234,7 @@ class Configs {
     try {
       // 读取自定义的平行视界配置
       String customEmbeddedRulesFile =
-          '/data/adb/MIUI_MagicWindow+/config/embedded_rules_list.xml';
+          '/data/adb/$moduleName/config/embedded_rules_list.xml';
 
       // 如果文件不存在则创建
       String? customEmbeddedFileContent =
@@ -209,9 +242,9 @@ class Configs {
 
       if (customEmbeddedFileContent == "") {
         await Root.exec(
-            cmd: "mkdir /data/adb/MIUI_MagicWindow+");
+            cmd: "mkdir /data/adb/$moduleName");
         await Root.exec(
-            cmd: "mkdir /data/adb/MIUI_MagicWindow+/config/");
+            cmd: "mkdir /data/adb/$moduleName/config/");
         await Root.exec(
             cmd: "touch $customEmbeddedRulesFile");
       }
@@ -259,16 +292,16 @@ class Configs {
     try {
       // 读取自定义的信箱配置
       String customFixRulesFile =
-          '/data/adb/MIUI_MagicWindow+/config/fixed_orientation_list.xml';
+          '/data/adb/$moduleName/config/fixed_orientation_list.xml';
 
       // 如果文件不存在则创建
       String? customFixedFileContent =
         await Root.exec(cmd: "cat $customFixRulesFile");
       if (customFixedFileContent == "") {
         await Root.exec(
-            cmd: "mkdir /data/adb/MIUI_MagicWindow+");
+            cmd: "mkdir /data/adb/$moduleName");
         await Root.exec(
-            cmd: "mkdir /data/adb/MIUI_MagicWindow+/config/");
+            cmd: "mkdir /data/adb/$moduleName/config/");
         await Root.exec(
             cmd: "touch $customFixRulesFile");
       }
@@ -356,15 +389,15 @@ class Configs {
     log("Fix Rules XML:");
     log(fixRulesXmlStr.toString());
     // 需要覆盖的文件路径
-    String embeddedRulesPath = '/data/adb/MIUI_MagicWindow+/config/embedded_rules_list.xml';
-    String fixRulesPath = '/data/adb/MIUI_MagicWindow+/config/fixed_orientation_list.xml';
+    String embeddedRulesPath = '/data/adb/$moduleName/config/embedded_rules_list.xml';
+    String fixRulesPath = '/data/adb/$moduleName/config/fixed_orientation_list.xml';
 
     // 备份文件路径
-    String embeddedBackupPath = '/data/adb/MIUI_MagicWindow+/config/embedded_rules_list.xml.bak';
-    String fixBackupPath = '/data/adb/MIUI_MagicWindow+/config/fixed_orientation_list.xml.bak';
+    String embeddedBackupPath = '/data/adb/$moduleName/config/embedded_rules_list.xml.bak';
+    String fixBackupPath = '/data/adb/$moduleName/config/fixed_orientation_list.xml.bak';
 
     // 创建目录的命令
-    await Root.exec(cmd: 'mkdir -p /data/adb/MIUI_MagicWindow+/config');
+    await Root.exec(cmd: 'mkdir -p /data/adb/$moduleName/config');
 
     // 备份现有的文件
     await Root.exec(cmd: 'cp $embeddedRulesPath $embeddedBackupPath || true');
@@ -406,7 +439,7 @@ class Configs {
 
   Future<void> updateRule() async {
     // 直接更新当前配置
-    String? updateResult = await Root.exec(cmd: '/data/adb/MIUI_MagicWindow+/config/update_rule.sh');
+    String? updateResult = await Root.exec(cmd: '/data/adb/$moduleName/config/update_rule.sh');
     log(updateResult!);
     for (var singleLine in updateResult.split('\n')){
       if (singleLine.isNotEmpty){

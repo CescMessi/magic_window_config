@@ -62,6 +62,9 @@ class _AppViewerState extends State<AppViewer> {
   }
 
   Future<void> _loadApps() async {
+    // 等待config初始化完成
+    await config!.waitForInitialization();
+    
     _readFile();
     List? apps;
     try {
@@ -185,6 +188,7 @@ class _AppViewerState extends State<AppViewer> {
 
   Widget _buildAppList() {
     if (_apps == null || embeddedRules == null) {
+      log('apps: $_apps , embeddedRules: $embeddedRules');
       return Center(child: CircularProgressIndicator());
     }
 
@@ -220,7 +224,7 @@ class _AppViewerState extends State<AppViewer> {
   Widget _buildSelectedApp(String selectedAppPackageName) {
     List<String> allActivities = ['*'];
     AndroidMethods.getActivities(selectedAppPackageName).then((activities) {
-      print(activities);
+      print('检测到的activities: $activities');
       allActivities.addAll(activities);
     });
 
@@ -411,8 +415,9 @@ class _AppViewerState extends State<AppViewer> {
   Future<void> _readFile() async {
     try {
       String embeddedRulesFile =
-          '/data/adb/modules/MIUI_MagicWindow+/common/source/embedded_rules_list.xml';
+          '/data/adb/modules/${config!.moduleName}/common/source/embedded_rules_list.xml';
       String? fileContent = await Root.exec(cmd: "cat " + embeddedRulesFile);
+      log('读取到的文件内容: $embeddedRulesFile $fileContent');
 
       if (fileContent!.startsWith('<')) {
         xml.XmlDocument document = xml.XmlDocument.parse(fileContent);

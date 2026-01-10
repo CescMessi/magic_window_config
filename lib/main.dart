@@ -363,6 +363,11 @@ class _AppViewerState extends State<AppViewer> {
       } else {
         configStatus += "  模块内置信箱模式：⚪";
       }
+      if (config!.modelHasEmbeddedSettingConfig(selectedAppPackageName)){
+        configStatus += "  Android 15布局配置：🔵";
+      } else {
+        configStatus += "  Android 15布局配置：⚪";
+      }
 
       return Container(
         padding: EdgeInsets.all(30),
@@ -400,6 +405,20 @@ class _AppViewerState extends State<AppViewer> {
                         packageName, xmlKey, value.toString());
                   });
                 }),
+            if (config!.readEmbeddedSettingFileSuccess == true) ...[
+              const Divider(
+                height: 20,
+              ),
+              EmbeddedSettingSimpleArea(
+                configs: config!,
+                packageName: selectedAppPackageName,
+                onChanged: (packageName, xmlKey, value) {
+                  setState(() {
+                    config!.setCustomValue(packageName, xmlKey, value.toString());
+                  });
+                },
+              ),
+            ],
             const Divider(
               height: 20,
             ),

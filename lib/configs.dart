@@ -76,11 +76,15 @@ class Configs {
   static XmlDocument? fixedDocument;
   static XmlDocument? customEmbeddedDocument;
   static XmlDocument? customFixedDocument;
+  static XmlDocument? embeddedSettingDocument;
+  static XmlDocument? customEmbeddedSettingDocument;
 
   bool? readEmbeddedFileSuccess;
   bool? readFixedFileSuccess;
   bool? readCustomEmbeddedFileSuccess;
   bool? readCustomFixedFileSuccess;
+  bool? readEmbeddedSettingFileSuccess;
+  bool? readCustomEmbeddedSettingFileSuccess;
 
   Map<String, Map<String, dynamic>> customConfig = {};
   String moduleName = 'MIUI_MagicWindow+';
@@ -114,7 +118,7 @@ class Configs {
       if (attributeName.startsWith('fixed')){
         attributeName = attributeName.split('.')[1];
 
-        if (!readFixedFileSuccess!){
+        if (readFixedFileSuccess != true){
           return _xmlValueParser(attributeName, "");
         }
         var parseResult = fixedDocument!.findAllElements('package').where(
@@ -126,8 +130,23 @@ class Configs {
         } else{
           return _xmlValueParser(attributeName, "");
         }
+      } else if (attributeName.startsWith('setting.')){
+        attributeName = attributeName.split('.')[1];
+
+        if (readEmbeddedSettingFileSuccess != true){
+          return _xmlValueParser(attributeName, "");
+        }
+        var parseResult = embeddedSettingDocument!.findAllElements('setting').where(
+                (setting) => setting.getAttribute('name') == packageName);
+        if (parseResult.isNotEmpty) {
+          var parseLine = parseResult.last;
+          var xmlValue = parseLine.getAttribute(attributeName) ?? "";
+          return _xmlValueParser(attributeName, xmlValue);
+        } else{
+          return _xmlValueParser(attributeName, "");
+        }
       } else {
-        if (!readEmbeddedFileSuccess!){
+        if (readEmbeddedFileSuccess != true){
           return _xmlValueParser(attributeName, "");
         }
         var parseResult = embeddedDocument!.findAllElements('package').where(
@@ -152,6 +171,15 @@ class Configs {
   bool modelHasFixedConfig(String packageName){
     var parseResult = fixedDocument!.findAllElements('package').where(
             (package) => package.getAttribute('name') == packageName);
+    return parseResult.isNotEmpty;
+  }
+
+  bool modelHasEmbeddedSettingConfig(String packageName){
+    if (readEmbeddedSettingFileSuccess == null || !readEmbeddedSettingFileSuccess!){
+      return false;
+    }
+    var parseResult = embeddedSettingDocument!.findAllElements('setting').where(
+            (setting) => setting.getAttribute('name') == packageName);
     return parseResult.isNotEmpty;
   }
 
@@ -344,25 +372,102 @@ class Configs {
       log(e.toString());
       readCustomFixedFileSuccess = false;
     }
+
+    try {
+      String embeddedSettingFile =
+          '/data/adb/modules/$moduleName/common/source/embedded_setting_config.xml';
+      String? embeddedSettingFileContent =
+          await Root.exec(cmd: "cat $embeddedSettingFile");
+
+      if (embeddedSettingFileContent!.startsWith(RegExp(r'^[\s\n]*<'))) {
+        embeddedSettingDocument = XmlDocument.parse(embeddedSettingFileContent);
+        readEmbeddedSettingFileSuccess = true;
+      } else {
+        readEmbeddedSettingFileSuccess = false;
+      }
+    } catch (e) {
+      log(e.toString());
+      readEmbeddedSettingFileSuccess = false;
+    }
+
+    try {
+      // 读取自定义的embedded_setting配置
+      String customEmbeddedSettingFile =
+          '/data/adb/$moduleName/config/embedded_setting_config.xml';
+
+      // 如果文件不存在则创建
+      String? customEmbeddedSettingFileContent =
+        await Root.exec(cmd: "cat $customEmbeddedSettingFile");
+      if (customEmbeddedSettingFileContent == "") {
+        await Root.exec(
+            cmd: "mkdir /data/adb/$moduleName");
+        await Root.exec(
+            cmd: "mkdir /data/adb/$moduleName/config/");
+        await Root.exec(
+            cmd: "touch $customEmbeddedSettingFile");
+      }
+      customEmbeddedSettingFileContent =
+          await Root.exec(cmd: "cat $customEmbeddedSettingFile");
+
+      if (customEmbeddedSettingFileContent == "" ||
+          customEmbeddedSettingFileContent!.startsWith(RegExp(r'^[\s\n]*<'))) {
+        // 空配置或已有配置，补全xml
+        customEmbeddedSettingFileContent =
+            "<setting_rule>\n$customEmbeddedSettingFileContent\n</setting_rule>";
+        customEmbeddedSettingDocument = XmlDocument.parse(customEmbeddedSettingFileContent);
+        readCustomEmbeddedSettingFileSuccess = true;
+
+        var settingElements = customEmbeddedSettingDocument!.findAllElements('setting');
+        log("载入自定义embedded_setting配置");
+        for (var settingElement in settingElements) {
+          var settingName = settingElement.getAttribute('name');
+          log('Setting: $settingName');
+          if (customConfig[settingName] == null) {
+            customConfig[settingName!] = {};
+          }
+          var attributes = settingElement.attributes;
+          for (var attribute in attributes) {
+            log('setting.${attribute.name}: ${attribute.value}');
+            if (attribute.name.toString() == "name"){
+              continue;
+            }
+            customConfig[settingName]!['setting.${attribute.name}'] =
+                attribute.value;
+          }
+        }
+        log("自定义embedded_setting配置载入完成");
+      } else {
+        readCustomEmbeddedSettingFileSuccess = false;
+      }
+    } catch (e) {
+      log(e.toString());
+      readCustomEmbeddedSettingFileSuccess = false;
+    }
   }
 
   Future<void> saveCustomConfig() async {
     var embeddedRulesXmlStr = StringBuffer();
     var fixRulesXmlStr = StringBuffer();
+    var embeddedSettingXmlStr = StringBuffer();
 
     customConfig.forEach((packageName, config) {
       var embeddedAttrs = StringBuffer();
       var fixAttrs = StringBuffer();
+      var settingAttrs = StringBuffer();
 
       config.forEach((attributeName, attributeValue) {
-        // 处理 fixed 开头的属性
         if (attributeName.startsWith('fixed.')) {
           var fixedAttrName = attributeName.replaceFirst('fixed.', '');
           var xmlValue = _convertToXmlValue(fixedAttrName, attributeValue);
           if (xmlValue.isNotEmpty){
             fixAttrs.write(' $fixedAttrName="$xmlValue"');
           }
-
+        } else if (attributeName.startsWith('setting.')) {
+          var settingAttrName = attributeName.replaceFirst('setting.', '');
+          var xmlValue = _convertToXmlValue(settingAttrName, attributeValue);
+          if (xmlValue.isNotEmpty){
+            settingAttrs.write(' $settingAttrName="$xmlValue"');
+          }
         } else {
           var xmlValue = _convertToXmlValue(attributeName, attributeValue);
           if (xmlValue.isNotEmpty) {
@@ -371,42 +476,45 @@ class Configs {
         }
       });
 
-      // 如果存在 embedded 属性，生成 embedded 规则 XML
       if (embeddedAttrs.isNotEmpty) {
         embeddedRulesXmlStr.write('<package name="$packageName"${embeddedAttrs.toString()} />\n');
       }
 
-      // 如果存在 fix 属性，生成 fix 规则 XML
       if (fixAttrs.isNotEmpty) {
         fixRulesXmlStr.write('<package name="$packageName"${fixAttrs.toString()} />\n');
       }
+
+      if (settingAttrs.isNotEmpty) {
+        embeddedSettingXmlStr.write('<setting name="$packageName"${settingAttrs.toString()} />\n');
+      }
     });
 
-    // 输出生成的 XML 字符串
     log("Embedded Rules XML:");
     log(embeddedRulesXmlStr.toString());
 
     log("Fix Rules XML:");
     log(fixRulesXmlStr.toString());
-    // 需要覆盖的文件路径
+
+    log("Embedded Setting XML:");
+    log(embeddedSettingXmlStr.toString());
+
     String embeddedRulesPath = '/data/adb/$moduleName/config/embedded_rules_list.xml';
     String fixRulesPath = '/data/adb/$moduleName/config/fixed_orientation_list.xml';
+    String embeddedSettingPath = '/data/adb/$moduleName/config/embedded_setting_config.xml';
 
-    // 备份文件路径
     String embeddedBackupPath = '/data/adb/$moduleName/config/embedded_rules_list.xml.bak';
     String fixBackupPath = '/data/adb/$moduleName/config/fixed_orientation_list.xml.bak';
+    String embeddedSettingBackupPath = '/data/adb/$moduleName/config/embedded_setting_config.xml.bak';
 
-    // 创建目录的命令
     await Root.exec(cmd: 'mkdir -p /data/adb/$moduleName/config');
 
-    // 备份现有的文件
     await Root.exec(cmd: 'cp $embeddedRulesPath $embeddedBackupPath || true');
     await Root.exec(cmd: 'cp $fixRulesPath $fixBackupPath || true');
+    await Root.exec(cmd: 'cp $embeddedSettingPath $embeddedSettingBackupPath || true');
 
-    // 写入新的 XML 内容到文件
     await Root.exec(cmd: 'echo \'$embeddedRulesXmlStr\' > $embeddedRulesPath');
     await Root.exec(cmd: 'echo \'$fixRulesXmlStr\' > $fixRulesPath');
-
+    await Root.exec(cmd: 'echo \'$embeddedSettingXmlStr\' > $embeddedSettingPath');
   }
 
 // 处理字典值到 XML 的转换逻辑

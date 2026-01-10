@@ -457,3 +457,57 @@ class _FixedSimpleAreaState extends State<FixedSimpleArea> {
     );
   }
 }
+
+class EmbeddedSettingSimpleArea extends MagicSimpleArea {
+  EmbeddedSettingSimpleArea({
+    super.key,
+    required super.configs,
+    required super.packageName,
+    required super.onChanged,
+  });
+
+  @override
+  State<EmbeddedSettingSimpleArea> createState() => _EmbeddedSettingSimpleAreaState();
+}
+
+class _EmbeddedSettingSimpleAreaState extends State<EmbeddedSettingSimpleArea> {
+  var switchKeys = [
+    "setting.fullScreenEnable",
+    "setting.ratio_fullScreenEnable",
+    "setting.fixedOrientationEnable",
+    "setting.embeddedEnable",
+  ];
+  var switchTitles = [
+    "强制全屏 [fullScreenEnable]",
+    "等比例缩放全屏 [ratio_fullScreenEnable]",
+    "居中布局 [fixedOrientationEnable]",
+    "平行窗口 [embeddedEnable]",
+  ];
+
+  @override
+  Widget build(BuildContext context) {
+    List<Widget> textSwitchList = [];
+    for (int i = 0; i < switchKeys.length; i++) {
+      textSwitchList.add(TextSwitch(
+          title: switchTitles[i],
+          configs: widget.configs,
+          selectedAppPackageName: widget.packageName,
+          xmlKey: switchKeys[i],
+          onChanged: widget.onChanged));
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text("Android 15 布局配置",
+            style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+        Wrap(
+          spacing: 10.0,
+          runSpacing: 1.0,
+          alignment: WrapAlignment.start,
+          children: textSwitchList,
+        ),
+      ],
+    );
+  }
+}
